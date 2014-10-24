@@ -28,7 +28,7 @@ public class RoomManager {
 		position=pos;
 	}
 	
-	public void removeRoom(){
+	public void removeRoom(Room room){
 		
 	}
 	
