@@ -1,11 +1,9 @@
 package com.example.none;
 
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.SupportMapFragment;
-
+import java.sql.ResultSet;
 
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
+
 
 import android.support.v4.app.FragmentActivity;
 import android.content.Context;
@@ -16,6 +14,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 import android.widget.Toast;
 //import com.google.android.maps.MapView;
 
@@ -24,53 +23,46 @@ import android.widget.Toast;
 public class MainActivity extends FragmentActivity implements LocationListener {
 	private LocationManager locationManager;
 	private String provider;
-	private GoogleMap myMap;
-	private double Latitude;
-	private double Longitude;
+	private Position position;
+	private TextView textView;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		
+		textView = (TextView) findViewById(R.id.textView1);
+		Toast.makeText(getApplicationContext(), "Bienvenido " + UserDriver.getUser().getName(),
+				 Toast.LENGTH_LONG).show();
 		locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 		// Define the criteria how to select the locatioin provider -> use
 		// default
 		Criteria criteria = new Criteria();
 		provider = locationManager.getBestProvider(criteria, false);
 		Location location = locationManager.getLastKnownLocation(provider);
-
+		position = new Position(location.getLatitude(), location.getLongitude());
 		// Initialize the location fields
 		if (location != null) {
 			System.out.println("Provider " + provider + " has been selected.");
 			onLocationChanged(location);
-		} else {
 		}
 		try {
-            initilizeMap();
+			MapManager.setMyActivity(this);
+            MapManager.createMap();
 	        // create marker
-	        MarkerOptions marker = new MarkerOptions()
-	        .position(new LatLng(Latitude, Longitude))
-	        .title("Cuarto (1)")
-	        .draggable(true);
-	        // adding marker
-	        myMap.addMarker(marker);
- 
+//	        MarkerOptions marker = new MarkerOptions()
+//	        .position(new LatLng(position.getLatitud(), position.getLongitud()))
+//	        .title(UserDriver.getUser().getName())
+//	        .draggable(true);
+//	        // adding marker
+//	        MapManager.addMarker(marker);
+	       MarkerDriver.showUsers();
+	       MarkerDriver.showRooms(UserDriver.getUser());
         } catch (Exception e) {
             e.printStackTrace();
         }
+
 	}
 
-	private void initilizeMap() {
-        if (myMap == null) {
-            myMap = ((SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
-            if (myMap == null) {
-                Toast.makeText(getApplicationContext(),"Map not created", Toast.LENGTH_SHORT).show();
-            }
-        }
-        myMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
-        myMap.setMyLocationEnabled(true);
-        myMap.getUiSettings().setMyLocationButtonEnabled(true);// latitude and longitude
-    }
+
  
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -90,8 +82,16 @@ public class MainActivity extends FragmentActivity implements LocationListener {
 	@Override
 	public void onLocationChanged(Location location) {
 		// TODO Auto-generated method stub
-        Latitude = location.getLatitude();
-        Longitude =location.getLongitude();
+        position.setLatitud(location.getLatitude());
+        position.setLongitud(location.getLongitude());
+        try {
+			UserDriver.updatePosition(position);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			Toast.makeText(getApplicationContext(), e.toString(),
+					 Toast.LENGTH_LONG).show();
+		}  
+        textView.setText(""+UserDriver.checkDistances());
 	}
 
 	@Override

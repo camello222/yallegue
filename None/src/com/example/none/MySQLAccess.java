@@ -7,49 +7,80 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class MySQLAccess {
-  private Connection connect = null;
-  private Statement statement = null;
-  private PreparedStatement preparedStatement = null;
-  private ResultSet resultSet = null;
-  private String DataBase;
-  private String User;
-  private String Password;
+public final class MySQLAccess {
+  private static Connection connect = null;
+  private static Statement statement = null;
+  private static ResultSet resultSet = null;
+  private static String DataBase = "yallegue";
+  private static String User ="general";
+  private static String Password="general";
+  private static String URL ="camello222.no-ip.org";
 
-  public void connect() throws Exception{
+	public static void setDataBase(String dataBase) {
+		DataBase = dataBase;
+	}
+
+	public static void setUser(String user) {
+		User = user;
+	}
+
+	public static void setPassword(String password) {
+		Password = password;
+	}
+
+	public static void setURL(String uRL) {
+		URL = uRL;
+	}
+	
+  public static void connect() throws Exception{
 	  try {
 	      // this will load the MySQL driver, each DB has its own driver
 	      Class.forName("com.mysql.jdbc.Driver");
 	      // setup the connection with the DB.
-	      DataBase = "yallegue";
-	      User ="general";
-	      Password="general";
 	      connect = DriverManager
-	          .getConnection("jdbc:mysql://camello222.no-ip.org/"+DataBase,User,Password);
+	          .getConnection("jdbc:mysql://"+URL +"/"+DataBase,User,Password);
 	  } catch (Exception e) {
 	      throw e;
 	  }
   }
+
+  public static ResultSet getUsers(String tableName) throws Exception{
+	  statement = connect.createStatement();
+	  // resultSet gets the result of the SQL query
+	  resultSet = statement
+			  .executeQuery("select * from " + DataBase + "." + tableName);
+	  return resultSet;
+  }
   
-  public void readTable(String tableName) throws Exception {
+  public static ResultSet getUser(String UserName, String Password, String table) throws Exception{
+	  statement = connect.createStatement();
+	  // resultSet gets the result of the SQL query
+	  resultSet = statement
+			  .executeQuery("select * from " + DataBase + "." 
+	  + table + " where name=\"" + UserName +"\" AND password =\"" + Password + "\"");
+	   return resultSet;
+	  
+  }
+  
+  
+  public static void readTable(String tableName) throws Exception {
     try {
       connect();
       statement = connect.createStatement();
       // resultSet gets the result of the SQL query
       resultSet = statement
           .executeQuery("select * from " + DataBase + "." + tableName);
-      readMetaData(resultSet);
-      readResultSet(resultSet);
+      printMetaData(resultSet);
+      printResultSet(resultSet);
       
     } catch (Exception e) {
       throw e;
     } finally {
       close();
     }
-
   }
 
-  private void readMetaData(ResultSet resultSet) throws SQLException {
+  private static void printMetaData(ResultSet resultSet) throws SQLException {
     // now get some metadata from the database
     System.out.println("The columns in the table are: ");
     System.out.println("Table: " + resultSet.getMetaData().getTableName(1));
@@ -58,7 +89,7 @@ public class MySQLAccess {
     }
   }
 
-  private void readResultSet(ResultSet resultSet) throws SQLException {
+  private static void printResultSet(ResultSet resultSet) throws SQLException {
     // resultSet is initialised before the first data set
     while (resultSet.next()) {
       // it is possible to get the columns via name
@@ -77,7 +108,7 @@ public class MySQLAccess {
   }
 
   // you need to close all three to make sure
-  private void close() {
+  public static void close() {
 	  try {
 		  resultSet.close();
 		  statement.close();
@@ -88,10 +119,21 @@ public class MySQLAccess {
 	  }
   }
 
+	public static void updateUser(User usr, String usertable) throws SQLException {
+		// TODO Auto-generated method stub
+		statement = connect.createStatement();
+		statement.executeUpdate("update "+ DataBase + "." + "users  set latitud=\"" +usr.getLalitud() 
+				+ "\", longitud=\"" + usr.getLongitud() +"\" where id= \"" + usr.getId() + "\"");
+	}
 
-  public static void main(String[] args) throws Exception {
-	  MySQLAccess dao = new MySQLAccess();
-	  dao.readTable("users");
-  }
+	public static ResultSet getUserRooms(User user, String roomtable) throws SQLException {
+		statement = connect.createStatement();
+		// resultSet gets the result of the SQL query
+		resultSet = statement
+				.executeQuery("select r.id, r.nombre, r.latitud, r.longitud, r.radio from " + DataBase + "." 
+						+ roomtable +" r ," + DataBase + ".roomsxusers ru where r.id = ru.room_id and ru.user_id = \"" 
+						+ user.getId() + "\"");
+		return resultSet;
+	}
 
 } 
